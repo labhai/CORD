@@ -28,7 +28,7 @@ Calibration quality and prediction preservation answer different questions: ECE,
 <p align="center">
   <img src="assets/accuracy-vs-tpcr.png" width="500" alt="Vector Scaling changes 5.74% of ImageNet-1K ResNet-50 top-1 predictions while accuracy changes by −0.24 percentage points">
   <br>
-  <sub><strong>Figure 1:</strong> Accuracy hides the extent of top-1 prediction changes. For Vector Scaling on ImageNet-1K with ResNet-50, accuracy change reflects the net balance of accuracy-improving (<i>C</i><sup>+</sup>) and accuracy-degrading (<i>C</i><sup>−</sup>) revisions, whereas TPCR in Equation (10) counts all revisions, including accuracy-neutral changes between incorrect classes (<i>C</i><sup>0</sup>).</sub>
+  <sub><strong>Figure 1:</strong> Accuracy hides the extent of top-1 prediction changes. Results for Vector Scaling on ImageNet-1K with ResNet-50.</sub>
 </p>
 
 For $N$ evaluation examples, let $d_0$ denote the original top-1 rule and $d_1$ the rule induced by the evaluated probability report. Under the same fixed tie rule,
