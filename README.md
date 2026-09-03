@@ -36,40 +36,19 @@ Application (new inputs)
 
 Here, `q_cal` and `q` are direct outputs of the same fitted calibrator, and `eta_` is the implementation's stored value of the shared scalar $\eta^\star$.
 
-For one input, let
+For one input, let $a=\arg\max_j p_j^0$ and $b=q_a$. CORD inherits the calibrated conditional distribution over all classes other than $a$ and changes only how probability mass is split between the original prediction and the remaining classes:
 
 $$
-a=\arg\max_j p_j^0,
-\qquad
-b=q_a,
-\qquad
 \alpha_a=0,
 \qquad
-\alpha_j=\frac{q_j}{1-b}\quad(j\neq a).
-$$
-
-CORD changes only how probability mass is split between the originally predicted class $a$ and all remaining classes, while preserving their calibrated conditional distribution:
-
-$$
-\widetilde{\mathbf p}(s)
-=s\mathbf e_a+(1-s)\boldsymbol\alpha,
-$$
-
-where $\mathbf e_a$ is the standard basis vector for class $a$. To make $a$ uniquely top-ranked, CORD restricts the repaired mass $s$ to
-
-$$
-I=
-\left[
-\frac{\rho}{1+\rho}+\epsilon_{\mathrm{num}},
-1-\epsilon_{\mathrm{num}}
-\right],
+\alpha_j=\frac{q_j}{1-b}\quad(j\neq a),
 \qquad
-\rho=\max_{j\neq a}\alpha_j.
+\widetilde{\mathbf p}(s)=s\mathbf e_a+(1-s)\boldsymbol\alpha.
 $$
 
-Here, $\epsilon_{\mathrm{num}}=10^{-12}$ is a fixed numerical offset. The local reference is $g=b$ when $\arg\max_j q_j=a$, and $g=(b+p_a^0)/2$ otherwise. On the calibration split, CORD coordinates the repaired masses through a Bernoulli–KL objective: their mean equals the direct outputs' mean mass on the original predictions when attainable, and the nearest attainable mean otherwise. The resulting application rule retains only the shared scalar $\eta^\star$ and holds it fixed for new output pairs.
+Here, $\mathbf e_a$ is the standard basis vector for class $a$. CORD selects $s$ from its strictly prediction-preserving interval, making $a$ uniquely top-ranked. On the calibration split, it coordinates the repaired masses through a Bernoulli–KL objective so that their mean equals the direct outputs' mean mass on the original predictions when attainable, and the nearest attainable mean otherwise. The resulting application rule retains only $\eta^\star$ and holds it fixed for new output pairs.
 
-For valid probability inputs, every repaired output is normalized, recovers the original top-1 class as its unique argmax, and preserves the calibrated conditional distribution over the remaining classes. Consequently, it has zero TPCR relative to the original output and the same top-1 accuracy. The aggregate mean condition applies only to the calibration split used by `fit`; changes in ECE, NLL, and Brier are empirical rather than structural guarantees.
+For valid probability inputs, every repaired output is normalized, recovers the original top-1 class as its unique argmax, and preserves the calibrated conditional distribution over the remaining classes. The aggregate mean condition applies only to the calibration split used by `fit`; changes in ECE, NLL, and Brier are empirical rather than structural guarantees.
 
 ## Installation
 
@@ -102,11 +81,11 @@ p_repaired = cord.transform(
 )
 ```
 
-The direct output `q` remains available unchanged. Use it when calibrator-induced prediction changes are acceptable; use `p_repaired` when the original top-1 prediction must be retained.
+The direct output `q` remains available unchanged; `p_repaired` is the corresponding prediction-preserving report.
 
 ### Input and Output
 
-| Call | Paper notation | Meaning | Shape |
+| Call | Notation | Meaning | Shape |
 |---|---|---|---:|
 | `fit(original=..., calibrated=...)` | $\mathbf p^0_{\mathrm{cal}},\mathbf q_{\mathrm{cal}}$ | Paired original and direct calibrated probability reports on the calibration split | `(N_cal, K)` each |
 | `transform(original=..., calibrated=...)` | $\mathbf p^0,\mathbf q$ | Paired reports for new inputs from the same classifier and fitted calibrator | `(N, K)` each |
@@ -116,9 +95,9 @@ The direct output `q` remains available unchanged. Use it when calibrator-induce
 
 Each array must be a finite, non-negative, row-normalized, two-dimensional full probability matrix with $N>0$ and $K\geq2$. Each original/calibrated pair must have the same shape and identical sample and class ordering. Do not pass logits, scalar confidences, predicted labels, or class indices; retain the batch dimension `(1, K)` for one input.
 
-CORD requires both the original and direct calibrated outputs at application time. The compact implementation assumes rather than validates the input conditions above. Re-run `fit` whenever the classifier, fitted calibrator, or calibration split changes.
+CORD requires both the original and direct calibrated outputs at application time. These input conditions are assumed rather than validated. Re-run `fit` whenever the classifier, fitted calibrator, or calibration split changes.
 
-Exact ties use the smallest maximizing class index, matching NumPy's first-maximizer convention. Boundary outputs containing exact zeros are stabilized internally using the paper's fixed order-preserving rule with $\delta_{\mathrm{stab}}=10^{-10}$; the supplied arrays remain unchanged, and conditional-distribution preservation is then with respect to the stabilized internal copy.
+Exact ties use the smallest maximizing class index. For boundary outputs containing exact zeros, method quantities are computed from the paper's order-preserving stabilized internal copies; the supplied arrays remain unchanged. In that case, the mean-mass and conditional-distribution statements above are exact with respect to the stabilized internal calibrated outputs.
 
 ## Citation
 
