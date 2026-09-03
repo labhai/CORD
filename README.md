@@ -21,9 +21,47 @@
 
 Post-hoc calibration corrects reported confidence, yet a multiclass calibrator can also change the associated top-1 prediction. Accuracy captures only the net effect of these changes on correctness, not how often predictions change; the Top-1 Prediction Change Rate (TPCR) instead measures this frequency. We propose Calibrator-Output Repair for Top-1 Decision Preservation (CORD), the first post-fit adapter to impose exact prediction preservation by repairing the full calibrated probability vector. From the original and calibrated outputs alone, CORD determines the mass assigned to the original top-1. The calibrated conditional distribution allocates the remaining mass over the other classes, yielding a repaired vector whose own argmax recovers the original prediction. On the calibration split, CORD coordinates the repaired masses to retain the calibrated outputs' mean mass on original predictions whenever attainable. The adapter alters neither the fitted calibrator nor its direct output, fits no additional supervised map, and requires no user- or validation-tuned hyperparameter. Across CIFAR-10/100 and ImageNet-1K, CORD attains zero TPCR by construction and lowers mean ECE, NLL, and Brier relative to the corresponding direct outputs in every dataset; paired gains persist under distribution shift and across calibration-set sizes. CORD thus removes the preservation constraint from calibrator fitting and assigns exact recovery of the original decision to subsequent output repair.
 
+## Evaluating Prediction Preservation
+
+Calibration quality and prediction preservation answer different questions: ECE, NLL, and Brier assess probability-report quality, whereas TPCR measures how often an evaluated report changes the original top-1 decision. Whenever a calibration map can change the argmax, TPCR should be reported alongside calibration metrics because accuracy captures only the net effect of those revisions on correctness.
+
+<p align="center">
+  <img src="assets/accuracy-vs-tpcr.png" width="500" alt="Vector Scaling changes 5.74% of ImageNet-1K ResNet-50 top-1 predictions while accuracy changes by −0.24 percentage points">
+  <br>
+  <sub><strong>Figure 1:</strong> Accuracy hides the extent of top-1 prediction changes. For Vector Scaling on ImageNet-1K with ResNet-50, accuracy change reflects the net balance of accuracy-improving (<i>C</i><sup>+</sup>) and accuracy-degrading (<i>C</i><sup>−</sup>) revisions, whereas TPCR in Equation (10) counts all revisions, including accuracy-neutral changes between incorrect classes (<i>C</i><sup>0</sup>).</sub>
+</p>
+
+For $N$ evaluation examples, let $d_0$ denote the original top-1 rule and $d_1$ the rule induced by the evaluated probability report. Under the same fixed tie rule,
+
+$$
+\begin{aligned}
+\Delta\operatorname{Acc}
+&:=\operatorname{Acc}(d_1)-\operatorname{Acc}(d_0)
+=\frac{|\mathcal C^+|-|\mathcal C^-|}{N},\\
+\operatorname{TPCR}
+&=\frac{1}{N}\sum_{i=1}^{N}
+\mathbf{1}\left\lbrace d_1(x_i)\neq d_0(x_i)\right\rbrace
+=\frac{|\mathcal C^+|+|\mathcal C^-|+|\mathcal C^0|}{N}.
+\end{aligned}
+$$
+
+Here, $\mathcal C^+$, $\mathcal C^-$, and $\mathcal C^0$ denote incorrect $\rightarrow$ correct, correct $\rightarrow$ incorrect, and incorrect $\rightarrow$ a different incorrect class, respectively. Thus, $\Delta\operatorname{Acc}$ can be small even when TPCR is large: $\mathcal C^+$ and $\mathcal C^-$ offset one another, while $\mathcal C^0$ is invisible to accuracy. This decomposition uses labels; TPCR itself does not.
+
+```python
+import numpy as np
+
+
+def tpcr(original: np.ndarray, evaluated: np.ndarray) -> float:
+    return float(np.mean(
+        np.argmax(original, axis=1) != np.argmax(evaluated, axis=1)
+    ))
+```
+
+Use `tpcr(p0, q)` for the direct calibrated output and `tpcr(p0, p_repaired)` for the CORD repair. The function returns a fraction in `[0, 1]`; multiply by `100` to report a percentage. For valid inputs, `tpcr(p0, p_repaired)` is zero by construction.
+
 ## CORD at a Glance
 
-CORD is a post-fit adapter for an already fitted multiclass calibration map. Given the original classifier output $\mathbf p^0$ and the calibration map's corresponding direct output $\mathbf q$, it constructs a separate repaired full probability vector $\widetilde{\mathbf p}$ whose own argmax recovers the original prediction. CORD leaves both the fitted calibrator and its direct output unchanged.
+CORD is a post-fit adapter for a fitted multiclass calibration map. Given the original classifier output $\mathbf p^0$ and the corresponding direct calibrated output $\mathbf q$, it constructs a separate full probability vector $\widetilde{\mathbf p}$ whose own argmax recovers the original prediction, while leaving both the fitted calibrator and $\mathbf q$ unchanged.
 
 ```text
 Construction (calibration split)
