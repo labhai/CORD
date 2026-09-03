@@ -35,17 +35,17 @@ For $N$ evaluation examples, let $d_0$ denote the original top-1 rule and $d_1$ 
 
 $$
 \begin{aligned}
-\Delta\operatorname{Acc}
-&:=\operatorname{Acc}(d_1)-\operatorname{Acc}(d_0)
+\Delta\mathrm{Acc}
+&:=\mathrm{Acc}(d_1)-\mathrm{Acc}(d_0)
 =\frac{|\mathcal C^+|-|\mathcal C^-|}{N},\\
-\operatorname{TPCR}
+\mathrm{TPCR}
 &=\frac{1}{N}\sum_{i=1}^{N}
 \mathbf{1}\left\lbrace d_1(x_i)\neq d_0(x_i)\right\rbrace
 =\frac{|\mathcal C^+|+|\mathcal C^-|+|\mathcal C^0|}{N}.
 \end{aligned}
 $$
 
-Here, $\mathcal C^+$, $\mathcal C^-$, and $\mathcal C^0$ denote incorrect $\rightarrow$ correct, correct $\rightarrow$ incorrect, and incorrect $\rightarrow$ a different incorrect class, respectively. Thus, $\Delta\operatorname{Acc}$ can be small even when TPCR is large: $\mathcal C^+$ and $\mathcal C^-$ offset one another, while $\mathcal C^0$ is invisible to accuracy. This decomposition uses labels; TPCR itself does not.
+Here, $\mathcal C^+$, $\mathcal C^-$, and $\mathcal C^0$ denote incorrect $\rightarrow$ correct, correct $\rightarrow$ incorrect, and incorrect $\rightarrow$ a different incorrect class, respectively. Thus, $\Delta\mathrm{Acc}$ can be small even when TPCR is large: $\mathcal C^+$ and $\mathcal C^-$ offset one another, while $\mathcal C^0$ is invisible to accuracy. This decomposition uses labels; TPCR itself does not.
 
 ```python
 import numpy as np
